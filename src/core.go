@@ -373,6 +373,14 @@ func Run(opts *Options) (int, error) {
 	if !deferred && !heightUnknown {
 		// Start right away
 		terminal.startChan <- fitpad{-1, -1}
+	} else if heightUnknown && !deferred {
+		// The input may stay below the adaptive height and never
+		// terminate (e.g. tail -f), in which case the first render
+		// would be delayed indefinitely (#4915). After the grace
+		// period, assume the input will fill the screen and start.
+		time.AfterFunc(adaptiveHeightTimeout, func() {
+			eventBox.Set(EvtHeightTimeout, nil)
+		})
 	}
 
 	// Event coordination
@@ -443,6 +451,14 @@ func Run(opts *Options) (int, error) {
 					err = quitSignal.err
 					stop = true
 					return
+				case EvtHeightTimeout:
+					if heightUnknown && !deferred {
+						deferred = false
+						heightUnknown = false
+						// Assume the input will fill the screen and
+						// start rendering at the full height
+						terminal.startChan <- fitpad{maxFit, padHeight}
+					}
 				case EvtReadNew, EvtReadFin:
 					if evt == EvtReadFin && nextCommand != nil {
 						restart(*nextCommand, nextEnviron)

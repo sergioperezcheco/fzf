@@ -11,6 +11,9 @@ const (
 	// Core
 	coordinatorDelayMax  time.Duration = 100 * time.Millisecond
 	coordinatorDelayStep time.Duration = 10 * time.Millisecond
+	// Grace period before adaptive height gives up waiting for the input
+	// to reach the height or terminate (issue #4915)
+	adaptiveHeightTimeout time.Duration = 1 * time.Second
 
 	// Reader
 	readerBufferSize       = 64 * 1024
@@ -66,6 +69,7 @@ const (
 	EvtSearchFin
 	EvtReady
 	EvtQuit
+	EvtHeightTimeout
 )
 
 const (
